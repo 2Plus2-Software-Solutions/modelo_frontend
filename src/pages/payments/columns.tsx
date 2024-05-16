@@ -1,6 +1,4 @@
-import { Button } from "@/components/ui/button";
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
 
 export type Payment = {
   id: string;
@@ -16,15 +14,12 @@ export const columns: ColumnDef<Payment>[] = [
   },
   {
     accessorKey: "email",
-    header: ({ column }) => {
+    header: "E-mail",
+    cell: ({ row }) => {
       return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Email
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+        <span className="cursor-pointer" onClick={() => alert("TESTE")}>
+          {row.getValue("email")}
+        </span>
       );
     },
   },

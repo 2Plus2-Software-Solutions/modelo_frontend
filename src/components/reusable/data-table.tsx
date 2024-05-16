@@ -1,12 +1,11 @@
 import {
   ColumnDef,
   flexRender,
-  SortingState,
   getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
   VisibilityState,
   useReactTable,
+  OnChangeFn,
+  PaginationState,
 } from "@tanstack/react-table";
 
 import {
@@ -25,18 +24,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import React from "react";
-import { Input } from "@/components/ui/input";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  pagination: PaginationState;
+  onPaginationChange: OnChangeFn<PaginationState>;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  pagination,
+  onPaginationChange,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
 
@@ -44,18 +45,18 @@ export function DataTable<TData, TValue>({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onSortingChange: setSorting,
-    getSortedRowModel: getSortedRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
+    manualPagination: true,
+    onPaginationChange,
     state: {
-      sorting,
       columnVisibility,
+      pagination,
     },
   });
 
   return (
     <div>
+      {/* Columns Visibility Dropdown */}
       <div className="flex items-center py-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -84,6 +85,8 @@ export function DataTable<TData, TValue>({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Table data */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -134,6 +137,8 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination Section */}
       <div className="flex items-center justify-end space-x-2 py-4">
         <Button
           variant="outline"
@@ -143,6 +148,13 @@ export function DataTable<TData, TValue>({
         >
           Anterior
         </Button>
+        <span className="flex items-center gap-1">
+          <div>Page</div>
+          <strong>
+            {table.getState().pagination.pageIndex + 1} of{" "}
+            {table.getPageCount().toLocaleString()}
+          </strong>
+        </span>
         <Button
           variant="outline"
           size="sm"
@@ -151,6 +163,18 @@ export function DataTable<TData, TValue>({
         >
           Próximo
         </Button>
+        <select
+          value={table.getState().pagination.pageSize}
+          onChange={(e) => {
+            table.setPageSize(Number(e.target.value));
+          }}
+        >
+          {[2, 10, 20, 30, 40, 50].map((pageSize) => (
+            <option key={pageSize} value={pageSize}>
+              Show {pageSize}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );
