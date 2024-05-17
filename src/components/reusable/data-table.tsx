@@ -24,20 +24,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import React from "react";
+import { usePagination } from "@/context/table-pagination.context";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  pagination: PaginationState;
-  onPaginationChange: OnChangeFn<PaginationState>;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
-  pagination,
-  onPaginationChange,
 }: DataTableProps<TData, TValue>) {
+  const { pagination, setPagination: onPaginationChange } = usePagination();
+
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
 
