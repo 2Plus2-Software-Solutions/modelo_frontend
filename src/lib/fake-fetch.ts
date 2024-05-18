@@ -1,6 +1,10 @@
-export const FakeFetch = async <TData, TFilters>(
-  filters: TFilters
+import { PaginationState } from "@tanstack/react-table";
+
+export const FakeFetch = async <TData, TForm>(
+  pagination: PaginationState,
+  filters: TForm
 ): Promise<TData> => {
+  console.log(pagination);
   console.log(filters);
   return [
     {

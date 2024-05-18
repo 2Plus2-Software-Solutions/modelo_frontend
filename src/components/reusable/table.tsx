@@ -1,8 +1,8 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { ColumnDef, PaginationState } from "@tanstack/react-table";
-import React from "react";
+import { ColumnDef } from "@tanstack/react-table";
+import React, { useState } from "react";
 
-import { DataTable } from "@/components/reusable/data-table";
+import { DataTable } from "@/components/data-table/data-table";
 import { FakeFetch } from "@/lib/fake-fetch";
 
 import { z } from "zod";
@@ -18,22 +18,34 @@ const formSchema = z.object({
   username: z.string().optional(),
   age: z.number().optional(),
 });
+type FormType = z.infer<typeof formSchema>;
 
 interface DataTableProps<TData> {
   columns: ColumnDef<TData>[];
 }
 
 export function Table<TData>({ columns }: DataTableProps<TData>) {
+  const memoizedDefaultFiltersObjectFromZodSchema = React.useMemo<FormType>(
+    () => GetDefaultObjectFromZodSchema(formSchema),
+    []
+  );
+
   const { pagination } = usePagination();
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const [filters, setFilters] = useState<FormType>(
+    memoizedDefaultFiltersObjectFromZodSchema
+  );
+
+  const form = useForm<FormType>({
     resolver: zodResolver(formSchema),
-    defaultValues: GetDefaultObjectFromZodSchema(formSchema),
+    defaultValues: memoizedDefaultFiltersObjectFromZodSchema,
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    console.log(form.getValues());
+  function searchResults(values: FormType) {
+    setFilters(values);
+  }
+
+  function resetFilters() {
     form.reset();
   }
 
@@ -41,16 +53,16 @@ export function Table<TData>({ columns }: DataTableProps<TData>) {
   const defaultData = React.useMemo(() => [], []);
 
   const { data } = useQuery({
-    queryKey: ["data", pagination],
-    queryFn: () => FakeFetch<TData[], PaginationState>(pagination),
-    placeholderData: keepPreviousData, // don't have 0 rows flash while changing pages/loading next page
+    queryKey: ["data", pagination, filters],
+    queryFn: () => FakeFetch<TData[], FormType>(pagination, filters),
+    placeholderData: keepPreviousData,
   });
 
   return (
     <div className="container mx-auto py-10">
       {/* Filters Component */}
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(searchResults)} className="space-y-8">
           <FormField
             control={form.control}
             name="username"
@@ -82,6 +94,9 @@ export function Table<TData>({ columns }: DataTableProps<TData>) {
             )}
           />
 
+          <Button type="button" onClick={() => resetFilters()}>
+            Limpar Filtros
+          </Button>
           <Button type="submit">Submit</Button>
         </form>
       </Form>
