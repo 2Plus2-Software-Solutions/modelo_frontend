@@ -1,13 +1,23 @@
 import { ColumnDef } from "@tanstack/react-table";
+import { UpdatePayment } from "./components/update";
 
 export type Payment = {
   id: string;
   amount: number;
   status: "pending" | "processing" | "success" | "failed";
   email: string;
+
+  userId: string;
 };
 
 export const columns: ColumnDef<Payment>[] = [
+  {
+    accessorKey: "actions",
+    header: "Ações",
+    cell: ({ row }) => {
+      return <UpdatePayment payment={row.original} />;
+    },
+  },
   {
     accessorKey: "status",
     header: "Status",

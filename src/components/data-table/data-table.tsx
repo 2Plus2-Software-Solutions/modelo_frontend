@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import React from "react";
-import { usePagination } from "@/context/table-pagination.context";
+import { useTablePagination } from "@/context/table-pagination.context";
 import { Pagination } from "./components/pagination";
 import { Content } from "./components/content";
 
@@ -26,7 +26,8 @@ export function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
-  const { pagination, setPagination: onPaginationChange } = usePagination();
+  const { pagination, setPagination: onPaginationChange } =
+    useTablePagination();
 
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -51,7 +52,7 @@ export function DataTable<TData, TValue>({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
-              Columns
+              Colunas
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -59,6 +60,7 @@ export function DataTable<TData, TValue>({
               .getAllColumns()
               .filter((column) => column.getCanHide())
               .map((column) => {
+                console.log(column);
                 return (
                   <DropdownMenuCheckboxItem
                     key={column.id}

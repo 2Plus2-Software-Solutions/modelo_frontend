@@ -5,99 +5,200 @@ import React, { useState } from "react";
 import { DataTable } from "@/components/data-table/data-table";
 import { FakeFetch } from "@/lib/fake-fetch";
 
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { DefaultValues, Path, useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "../ui/form";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
-import { GetDefaultObjectFromZodSchema } from "@/lib/default-object-from-zod-schema";
-import { usePagination } from "@/context/table-pagination.context";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useTablePagination } from "@/context/table-pagination.context";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { useTableHistoric } from "@/context/table-historic.context";
 
-const formSchema = z.object({
-  username: z.string().optional(),
-  age: z.number().optional(),
-});
-type FormType = z.infer<typeof formSchema>;
-
-interface DataTableProps<TData> {
-  columns: ColumnDef<TData>[];
+interface BaseFiltersDef<TFilters> {
+  accessorKey: Path<TFilters>;
+  label: string;
 }
 
-export function Table<TData>({ columns }: DataTableProps<TData>) {
-  const memoizedDefaultFiltersObjectFromZodSchema = React.useMemo<FormType>(
-    () => GetDefaultObjectFromZodSchema(formSchema),
-    []
-  );
+interface InputFiltersDef<TFilters> extends BaseFiltersDef<TFilters> {
+  inputType: "input";
+  mask?: (value: string) => string;
+}
 
-  const { pagination } = usePagination();
+interface SelectFiltersDef<TFilters> extends BaseFiltersDef<TFilters> {
+  inputType: "select";
+  selectOptions: { value: string; label: string }[];
+}
 
-  const [filters, setFilters] = useState<FormType>(
-    memoizedDefaultFiltersObjectFromZodSchema
-  );
+export type FiltersDef<TFilters> =
+  | InputFiltersDef<TFilters>
+  | SelectFiltersDef<TFilters>;
 
-  const form = useForm<FormType>({
-    resolver: zodResolver(formSchema),
-    defaultValues: memoizedDefaultFiltersObjectFromZodSchema,
+interface DataTableProps<TData, TFilters> {
+  columns: ColumnDef<TData>[];
+  filters: FiltersDef<TFilters>[];
+  title: string;
+}
+
+export function Table<TData extends {}, TFilters extends {}>({
+  columns,
+  filters: filtersDef,
+  title,
+}: DataTableProps<TData, TFilters>) {
+  const { pagination } = useTablePagination();
+  const {
+    breadcrumbItems,
+    onClickBreadcrumbItem,
+    onChangeFilters,
+    initialFiltersFromUrl,
+  } = useTableHistoric();
+
+  const memoizedDefaultFiltersObject = React.useMemo<TFilters>(() => {
+    const defaultFilters = filtersDef.reduce((acc, curr) => {
+      return {
+        ...acc,
+        [curr.accessorKey]: "",
+      };
+    }, {} as TFilters);
+
+    return { ...defaultFilters, ...initialFiltersFromUrl };
+  }, []);
+
+  const filtersForm = useForm<TFilters>({
+    defaultValues: memoizedDefaultFiltersObject as DefaultValues<TFilters>,
   });
 
-  function searchResults(values: FormType) {
+  const [filters, setFilters] = useState<TFilters>(
+    memoizedDefaultFiltersObject
+  );
+
+  function searchResults(values: TFilters) {
     setFilters(values);
   }
 
   function resetFilters() {
-    form.reset();
+    filtersForm.reset();
   }
 
+  // Data Table Definitions
   const memoizedColumns = React.useMemo<ColumnDef<TData>[]>(() => columns, []);
   const defaultData = React.useMemo(() => [], []);
 
   const { data } = useQuery({
     queryKey: ["data", pagination, filters],
-    queryFn: () => FakeFetch<TData[], FormType>(pagination, filters),
+    queryFn: () => FakeFetch<TData[], TFilters>(pagination, filters),
     placeholderData: keepPreviousData,
   });
 
   return (
     <div className="container mx-auto py-10">
-      {/* Filters Component */}
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(searchResults)} className="space-y-8">
-          <FormField
-            control={form.control}
-            name="username"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Username</FormLabel>
-                <FormControl>
-                  <Input placeholder="Username" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+      <div className="mb-8">
+        <h1 className="font-bold text-xl">{title}</h1>
 
-          <FormField
-            control={form.control}
-            name="age"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Idade</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="Idade"
-                    {...field}
-                    onChange={(event) => field.onChange(+event.target.value)}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+        <Breadcrumb>
+          <BreadcrumbList>
+            {breadcrumbItems.map((item, index) => {
+              return (
+                <React.Fragment key={item.href}>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink
+                      className="cursor-pointer hover:underline"
+                      onClick={() => onClickBreadcrumbItem(index)}
+                    >
+                      {item.label}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  {index !== breadcrumbItems.length - 1 && (
+                    <BreadcrumbSeparator />
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+
+      {/* Filters Component */}
+      <Form {...filtersForm}>
+        <form
+          onSubmit={filtersForm.handleSubmit(searchResults)}
+          className="space-y-8"
+          onChange={() => {
+            onChangeFilters(filtersForm.getValues());
+          }}
+        >
+          {filtersDef.map((filter) => {
+            return (
+              <FormField
+                key={React.useId()}
+                control={filtersForm.control}
+                name={filter.accessorKey}
+                render={({ field }) => {
+                  if (filter.inputType === "select") {
+                    return (
+                      <FormItem>
+                        <FormLabel>{filter.label}</FormLabel>
+                        <Select onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={filter.label} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {filter.selectOptions.map((option) => {
+                              return (
+                                <SelectItem
+                                  key={React.useId()}
+                                  value={option.value}
+                                >
+                                  {option.label}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    );
+                  }
+
+                  return (
+                    <FormItem>
+                      <FormLabel>{filter.label}</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          onChange={(event) =>
+                            filter.mask
+                              ? field.onChange(filter.mask(event.target.value))
+                              : field.onChange(event)
+                          }
+                          placeholder={filter.label}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  );
+                }}
+              />
+            );
+          })}
 
           <Button type="button" onClick={() => resetFilters()}>
             Limpar Filtros
           </Button>
-          <Button type="submit">Submit</Button>
+          <Button className="ml-2" type="submit">
+            Submit
+          </Button>
         </form>
       </Form>
 

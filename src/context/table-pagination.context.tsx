@@ -29,6 +29,6 @@ export const TablePaginationProvider = ({
   );
 };
 
-export const usePagination = () => {
+export const useTablePagination = () => {
   return React.useContext(TablePaginationContext);
 };
