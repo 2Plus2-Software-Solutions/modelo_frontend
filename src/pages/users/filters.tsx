@@ -1,4 +1,4 @@
-import { FiltersDef } from "@/components/reusable/table";
+import { FiltersDef } from "@/components/table/table";
 
 export type UserFilters = {
   name: string;

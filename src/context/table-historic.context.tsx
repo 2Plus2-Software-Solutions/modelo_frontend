@@ -17,14 +17,20 @@ type TableBreadcrumbItem = {
 const TableHistoricContext = React.createContext<{
   breadcrumbItems: TableBreadcrumbItem[];
   onClickBreadcrumbItem: (itemIndex: number) => void;
-  onChangeFilters: <TFilters extends {}>(newFilters: TFilters) => void;
+  onChangeFilters: <
+    TFilters extends {
+      [key: string]: string;
+    }
+  >(
+    newFilters: TFilters
+  ) => void;
   initialFiltersFromUrl: {
     [k: string]: string;
   };
 }>({
   breadcrumbItems: [],
-  onClickBreadcrumbItem: (_) => {},
-  onChangeFilters: (_) => {},
+  onClickBreadcrumbItem: () => {},
+  onChangeFilters: () => {},
   initialFiltersFromUrl: {},
 });
 
@@ -53,7 +59,7 @@ export const TableHistoricProvider = ({
       ...Object.fromEntries(searchParams),
       [typedState.targetFilterAccessorKey]: typedState.identifier ?? "",
     };
-  }, [pathname]);
+  }, [searchParams, state]);
 
   const [filtersItems, setFiltersItems] = React.useState<
     { [key: string]: string }[]
@@ -97,7 +103,7 @@ export const TableHistoricProvider = ({
 
       return [...prev, currentPageBreadcrumbItem];
     });
-  }, [pathname]);
+  }, [pathname, state]);
 
   function onClickBreadcrumbItem(itemIndex: number) {
     const clickedBreadcrumbItem = breadcrumbItems[itemIndex];
@@ -112,7 +118,11 @@ export const TableHistoricProvider = ({
     });
   }
 
-  function onChangeFilters<TFilters extends {}>(newFilters: TFilters) {
+  function onChangeFilters<
+    TFilters extends {
+      [key: string]: string;
+    }
+  >(newFilters: TFilters) {
     setFiltersItems((prev) => {
       if (prev.length === 0) {
         return [newFilters];

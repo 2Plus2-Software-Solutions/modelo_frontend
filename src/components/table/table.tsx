@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { DataTable } from "@/components/data-table/data-table";
 import { FakeFetch } from "@/lib/fake-fetch";
 
-import { DefaultValues, Path, useForm } from "react-hook-form";
+import { Path, useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "../ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -51,11 +51,12 @@ interface DataTableProps<TData, TFilters> {
   title: string;
 }
 
-export function Table<TData extends {}, TFilters extends {}>({
-  columns,
-  filters: filtersDef,
-  title,
-}: DataTableProps<TData, TFilters>) {
+export function Table<
+  TData extends object,
+  TFilters extends {
+    [key: string]: string;
+  }
+>({ columns, filters: filtersDef, title }: DataTableProps<TData, TFilters>) {
   const { pagination } = useTablePagination();
   const {
     breadcrumbItems,
@@ -65,34 +66,37 @@ export function Table<TData extends {}, TFilters extends {}>({
   } = useTableHistoric();
 
   const memoizedDefaultFiltersObject = React.useMemo<TFilters>(() => {
-    const defaultFilters = filtersDef.reduce((acc, curr) => {
+    return filtersDef.reduce((acc, curr) => {
       return {
         ...acc,
         [curr.accessorKey]: "",
       };
     }, {} as TFilters);
-
-    return { ...defaultFilters, ...initialFiltersFromUrl };
-  }, []);
+  }, [filtersDef]);
 
   const filtersForm = useForm<TFilters>({
-    defaultValues: memoizedDefaultFiltersObject as DefaultValues<TFilters>,
+    values: {
+      ...memoizedDefaultFiltersObject,
+      ...initialFiltersFromUrl,
+    },
   });
 
-  const [filters, setFilters] = useState<TFilters>(
-    memoizedDefaultFiltersObject
-  );
+  const [filters, setFilters] = useState<TFilters>(filtersForm.getValues());
 
   function searchResults(values: TFilters) {
     setFilters(values);
   }
 
   function resetFilters() {
-    filtersForm.reset();
+    filtersForm.reset(memoizedDefaultFiltersObject);
+    onChangeFilters(memoizedDefaultFiltersObject);
   }
 
   // Data Table Definitions
-  const memoizedColumns = React.useMemo<ColumnDef<TData>[]>(() => columns, []);
+  const memoizedColumns = React.useMemo<ColumnDef<TData>[]>(
+    () => columns,
+    [columns]
+  );
   const defaultData = React.useMemo(() => [], []);
 
   const { data } = useQuery({
@@ -141,7 +145,7 @@ export function Table<TData extends {}, TFilters extends {}>({
           {filtersDef.map((filter) => {
             return (
               <FormField
-                key={React.useId()}
+                key={filter.accessorKey}
                 control={filtersForm.control}
                 name={filter.accessorKey}
                 render={({ field }) => {
@@ -159,7 +163,7 @@ export function Table<TData extends {}, TFilters extends {}>({
                             {filter.selectOptions.map((option) => {
                               return (
                                 <SelectItem
-                                  key={React.useId()}
+                                  key={option.value}
                                   value={option.value}
                                 >
                                   {option.label}

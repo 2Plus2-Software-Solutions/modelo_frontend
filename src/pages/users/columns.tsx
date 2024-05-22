@@ -1,7 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { TableNavigationState } from "@/context/table-historic.context";
+import { NavigationCell } from "@/components/data-table/components/cells/navigation-cell";
 import { ColumnDef } from "@tanstack/react-table";
-import { useNavigate } from "react-router-dom";
 
 export type User = {
   id: string;
@@ -26,24 +24,12 @@ export const columns: ColumnDef<User>[] = [
   {
     accessorKey: "payments_relation",
     header: "Pagamentos",
-    cell: ({ row }) => {
-      const navigate = useNavigate();
-
-      return (
-        <Button
-          onClick={() => {
-            navigate("/payments", {
-              state: {
-                origin: "users",
-                identifier: row.original.id,
-                targetFilterAccessorKey: "userId",
-              } as TableNavigationState,
-            });
-          }}
-        >
-          Pagamentos
-        </Button>
-      );
-    },
+    cell: ({ row }) => (
+      <NavigationCell
+        origin="users"
+        identifier={row.original.id}
+        targetFilterAccessorKey="userId"
+      />
+    ),
   },
 ];

@@ -1,6 +1,6 @@
 import { columns } from "./columns";
 import { filters } from "./filters";
-import { Table } from "@/components/reusable/table";
+import { Table } from "@/components/table/table";
 
 export default function PaymentsTable() {
   return (

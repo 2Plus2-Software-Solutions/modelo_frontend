@@ -4,8 +4,9 @@ export const FakeFetch = async <TData, TForm>(
   pagination: PaginationState,
   filters: TForm
 ): Promise<TData> => {
-  // console.log(pagination);
-  // console.log(filters);
+  console.log("Fetch");
+  console.log(pagination);
+  console.log(filters);
   return [
     {
       id: "1",
