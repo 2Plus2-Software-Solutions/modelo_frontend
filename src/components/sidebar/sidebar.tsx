@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Link, useLocation } from "react-router-dom";
-import { User2, Wallet2 } from "lucide-react";
+import { User2, Wallet2, Settings2 } from "lucide-react";
 
 export function Sidebar() {
   const { pathname } = useLocation();
@@ -43,9 +43,9 @@ export function Sidebar() {
           <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
             Configurações
           </h2>
-          <div className="space-y-1">
+          <div className="space-y-1 p-2">
             <Button variant="ghost" className="w-full justify-start">
-              Perfil
+              <Settings2 className="mr-2" size={18} /> Dados Pessoais
             </Button>
           </div>
         </div>

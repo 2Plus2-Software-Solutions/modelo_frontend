@@ -1,26 +1,25 @@
 import { Button } from "@/components/ui/button";
-import { TableNavigationState } from "@/context/table-historic.context";
-import { useNavigate } from "react-router-dom";
+import { useTableHistoric } from "@/context/table-historic.context";
 
-interface NavigationCellProps extends TableNavigationState {}
+interface NavigationCellProps {
+  to: string;
+  identifier: string;
+  targetFilterAccessorKey: string;
+}
 
 export function NavigationCell({
-  origin,
+  to,
   identifier,
   targetFilterAccessorKey,
 }: NavigationCellProps) {
-  const navigate = useNavigate();
+  const { onNavigateToAnotherTable } = useTableHistoric();
 
   return (
     <Button
       onClick={() => {
-        navigate("/payments", {
-          state: {
-            origin,
-            identifier,
-            targetFilterAccessorKey,
-          } as TableNavigationState,
-        });
+        onNavigateToAnotherTable(
+          `${to}?${targetFilterAccessorKey}=${identifier}`
+        );
       }}
     >
       Pagamentos

@@ -56,11 +56,11 @@ export const GetDefaultObjectFromZodSchema = <T extends z.ZodTypeAny>(
       }
       if (dschema instanceof z.ZodString) return "";
       if (dschema instanceof z.ZodNumber || dschema instanceof z.ZodBigInt) {
-        let value = dschema.minValue ?? 0;
+        const value = dschema.minValue ?? 0;
         return value;
       }
       if (dschema instanceof z.ZodDate) {
-        let value = defaultDateEmpty
+        const value = defaultDateEmpty
           ? ""
           : defaultDateNull
           ? null

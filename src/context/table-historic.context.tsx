@@ -1,21 +1,15 @@
 import React, { ReactNode } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import LZString from "lz-string";
 
-export type TableNavigationState = {
-  origin: "breadcrumb" | "payments" | "users";
-  identifier?: string;
-  targetFilterAccessorKey?: string;
-};
-
-type TableBreadcrumbItem = {
+type TableHistoricItem = {
   href: string;
   label: string;
 };
 
-// Context para lidar com o histórico de navegação entre as tabelas
-// Histórico de filtros e de páginas (breadcrumb)
 const TableHistoricContext = React.createContext<{
-  breadcrumbItems: TableBreadcrumbItem[];
+  breadcrumbItems: TableHistoricItem[];
+  onNavigateToAnotherTable: (path: string) => void;
   onClickBreadcrumbItem: (itemIndex: number) => void;
   onChangeFilters: <
     TFilters extends {
@@ -29,6 +23,7 @@ const TableHistoricContext = React.createContext<{
   };
 }>({
   breadcrumbItems: [],
+  onNavigateToAnotherTable: () => {},
   onClickBreadcrumbItem: () => {},
   onChangeFilters: () => {},
   initialFiltersFromUrl: {},
@@ -39,83 +34,83 @@ export const TableHistoricProvider = ({
 }: {
   children: ReactNode;
 }) => {
-  const { pathname, state } = useLocation();
+  const { pathname, search } = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const initialFiltersFromUrl = React.useMemo(() => {
-    const typedState = state as TableNavigationState;
-    console.log(typedState);
+  const currentUrl = React.useMemo(() => {
+    return `${pathname}${search}`;
+  }, [pathname]);
 
-    if (
-      !typedState ||
-      !typedState.targetFilterAccessorKey ||
-      typedState.origin === "breadcrumb"
-    ) {
-      return Object.fromEntries(searchParams);
+  const [historicItems, setHistoricItems] = React.useState<TableHistoricItem[]>(
+    []
+  );
+
+  const initialFiltersFromUrl = React.useMemo(() => {
+    const copiedSearchParams = new URLSearchParams(searchParams);
+
+    if (copiedSearchParams.get("historic")) {
+      copiedSearchParams.delete("historic");
     }
 
-    return {
-      ...Object.fromEntries(searchParams),
-      [typedState.targetFilterAccessorKey]: typedState.identifier ?? "",
-    };
-  }, [searchParams, state]);
-
-  const [filtersItems, setFiltersItems] = React.useState<
-    { [key: string]: string }[]
-  >([]);
-
-  const [breadcrumbItems, setBreadcrumbItems] = React.useState<
-    TableBreadcrumbItem[]
-  >([]);
+    return Object.fromEntries(copiedSearchParams);
+  }, [searchParams]);
 
   React.useEffect(() => {
-    const currentPageBreadcrumbItem: TableBreadcrumbItem = {
-      href: pathname,
-      label: pathname,
+    const currentPageBreadcrumbItem: TableHistoricItem = {
+      href: currentUrl,
+      label: pathname.split("/")[1],
     };
 
-    const typedState = state as TableNavigationState;
+    if (!search) {
+      setHistoricItems([currentPageBreadcrumbItem]);
+    }
 
-    if (!typedState) {
-      setBreadcrumbItems([currentPageBreadcrumbItem]);
+    const historicSearchItem = searchParams.get("historic");
+    if (historicSearchItem) {
+      const decompressedHistoricItems = JSON.parse(
+        LZString.decompressFromEncodedURIComponent(historicSearchItem)
+      );
+
+      setHistoricItems([
+        ...decompressedHistoricItems,
+        currentPageBreadcrumbItem,
+      ]);
       return;
     }
 
-    if (typedState.origin === "breadcrumb") {
-      setBreadcrumbItems((prev) => {
-        if (prev.length === 0) {
-          return [currentPageBreadcrumbItem];
-        }
+    setHistoricItems((prev) => {
+      if (prev.length === 0) {
+        return [currentPageBreadcrumbItem];
+      }
 
-        const currentPageIndex = prev.findIndex(
-          (item) => item.href === pathname
-        );
-
-        return prev.slice(0, currentPageIndex + 1);
-      });
-    }
-
-    setBreadcrumbItems((prev) => {
-      if (prev.find((item) => item.href === pathname)) {
-        return [...prev];
+      const currentPageBreadcrumbItemIndex = prev.findIndex(
+        (item) => item.href === currentUrl
+      );
+      if (currentPageBreadcrumbItemIndex !== -1) {
+        return prev.slice(0, currentPageBreadcrumbItemIndex + 1);
       }
 
       return [...prev, currentPageBreadcrumbItem];
     });
-  }, [pathname, state]);
+  }, [pathname]);
+
+  function onNavigateToAnotherTable(path: string) {
+    const stringifiedHistoricItems = JSON.stringify(historicItems);
+    const compressedHistoricItems = LZString.compressToEncodedURIComponent(
+      stringifiedHistoricItems
+    );
+
+    navigate(`${path}&historic=${compressedHistoricItems}`);
+  }
 
   function onClickBreadcrumbItem(itemIndex: number) {
-    const clickedBreadcrumbItem = breadcrumbItems[itemIndex];
+    const currentUrl = `${pathname}${search}`;
+    const clickedBreadcrumbItem = historicItems[itemIndex];
 
-    if (clickedBreadcrumbItem.href === pathname) return;
+    if (clickedBreadcrumbItem.href === currentUrl) return;
 
-    navigate(clickedBreadcrumbItem.href, {
-      state: {
-        origin: "breadcrumb",
-      } as TableNavigationState,
-      replace: true,
-    });
+    navigate(clickedBreadcrumbItem.href);
   }
 
   function onChangeFilters<
@@ -123,13 +118,23 @@ export const TableHistoricProvider = ({
       [key: string]: string;
     }
   >(newFilters: TFilters) {
-    setFiltersItems((prev) => {
-      if (prev.length === 0) {
-        return [newFilters];
-      }
+    const filtersAsSearchParams = new URLSearchParams(newFilters);
+    const currentPathUrl = `${pathname}?${filtersAsSearchParams}`;
 
-      prev.pop();
-      return [...prev, newFilters];
+    if (historicItems.length === 0) {
+      return;
+    }
+
+    setHistoricItems((prev) => {
+      const { label } = prev.pop()!;
+
+      return [
+        ...prev,
+        {
+          href: currentPathUrl,
+          label,
+        },
+      ];
     });
 
     setSearchParams(new URLSearchParams(newFilters));
@@ -138,7 +143,8 @@ export const TableHistoricProvider = ({
   return (
     <TableHistoricContext.Provider
       value={{
-        breadcrumbItems,
+        breadcrumbItems: historicItems,
+        onNavigateToAnotherTable,
         onClickBreadcrumbItem,
         onChangeFilters,
         initialFiltersFromUrl,

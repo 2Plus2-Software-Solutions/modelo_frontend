@@ -133,7 +133,6 @@ export function Table<
         </Breadcrumb>
       </div>
 
-      {/* Filters Component */}
       <Form {...filtersForm}>
         <form
           onSubmit={filtersForm.handleSubmit(searchResults)}
