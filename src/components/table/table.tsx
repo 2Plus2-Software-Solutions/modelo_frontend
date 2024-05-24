@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
-import React, { useState } from "react";
+import React from "react";
 
 import { DataTable } from "@/components/data-table/data-table";
 import { FakeFetch } from "@/lib/fake-fetch";
@@ -58,12 +58,8 @@ export function Table<
   }
 >({ columns, filters: filtersDef, title }: DataTableProps<TData, TFilters>) {
   const { pagination } = useTablePagination();
-  const {
-    breadcrumbItems,
-    onClickBreadcrumbItem,
-    onChangeFilters,
-    initialFiltersFromUrl,
-  } = useTableHistoric();
+  const { breadcrumbItems, onClickBreadcrumbItem, setFilters, filters } =
+    useTableHistoric();
 
   const memoizedDefaultFiltersObject = React.useMemo<TFilters>(() => {
     return filtersDef.reduce((acc, curr) => {
@@ -77,11 +73,9 @@ export function Table<
   const filtersForm = useForm<TFilters>({
     values: {
       ...memoizedDefaultFiltersObject,
-      ...initialFiltersFromUrl,
+      ...filters,
     },
   });
-
-  const [filters, setFilters] = useState<TFilters>(filtersForm.getValues());
 
   function searchResults(values: TFilters) {
     setFilters(values);
@@ -89,7 +83,6 @@ export function Table<
 
   function resetFilters() {
     filtersForm.reset(memoizedDefaultFiltersObject);
-    onChangeFilters(memoizedDefaultFiltersObject);
   }
 
   // Data Table Definitions
@@ -101,8 +94,10 @@ export function Table<
 
   const { data } = useQuery({
     queryKey: ["data", pagination, filters],
-    queryFn: () => FakeFetch<TData[], TFilters>(pagination, filters),
+    queryFn: () =>
+      FakeFetch<TData[], TFilters>(pagination, filters as TFilters),
     placeholderData: keepPreviousData,
+    enabled: Object.keys(filters).length !== 0,
   });
 
   return (
@@ -114,7 +109,7 @@ export function Table<
           <BreadcrumbList>
             {breadcrumbItems.map((item, index) => {
               return (
-                <React.Fragment key={item.href}>
+                <React.Fragment key={item.urlPathname}>
                   <BreadcrumbItem>
                     <BreadcrumbLink
                       className="cursor-pointer hover:underline"
@@ -137,9 +132,6 @@ export function Table<
         <form
           onSubmit={filtersForm.handleSubmit(searchResults)}
           className="space-y-8"
-          onChange={() => {
-            onChangeFilters(filtersForm.getValues());
-          }}
         >
           {filtersDef.map((filter) => {
             return (

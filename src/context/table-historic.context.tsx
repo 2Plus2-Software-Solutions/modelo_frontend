@@ -1,9 +1,11 @@
 import React, { ReactNode } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import LZString from "lz-string";
+import { CleanObjectEmptyValues } from "@/lib/clean-object-empty-values";
 
 type TableHistoricItem = {
-  href: string;
+  urlPathname: string;
+  urlSearchParams: string;
   label: string;
 };
 
@@ -11,22 +13,22 @@ const TableHistoricContext = React.createContext<{
   breadcrumbItems: TableHistoricItem[];
   onNavigateToAnotherTable: (path: string) => void;
   onClickBreadcrumbItem: (itemIndex: number) => void;
-  onChangeFilters: <
+  setFilters: <
     TFilters extends {
       [key: string]: string;
     }
   >(
     newFilters: TFilters
   ) => void;
-  initialFiltersFromUrl: {
+  filters: {
     [k: string]: string;
   };
 }>({
   breadcrumbItems: [],
   onNavigateToAnotherTable: () => {},
   onClickBreadcrumbItem: () => {},
-  onChangeFilters: () => {},
-  initialFiltersFromUrl: {},
+  setFilters: () => {},
+  filters: {},
 });
 
 export const TableHistoricProvider = ({
@@ -34,35 +36,22 @@ export const TableHistoricProvider = ({
 }: {
   children: ReactNode;
 }) => {
+  const [searchParams] = useSearchParams();
   const { pathname, search } = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-
-  const currentUrl = React.useMemo(() => {
-    return `${pathname}${search}`;
-  }, [pathname]);
 
   const [historicItems, setHistoricItems] = React.useState<TableHistoricItem[]>(
     []
   );
 
-  const initialFiltersFromUrl = React.useMemo(() => {
-    const copiedSearchParams = new URLSearchParams(searchParams);
-
-    if (copiedSearchParams.get("historic")) {
-      copiedSearchParams.delete("historic");
-    }
-
-    return Object.fromEntries(copiedSearchParams);
-  }, [searchParams]);
-
   React.useEffect(() => {
     const currentPageBreadcrumbItem: TableHistoricItem = {
-      href: currentUrl,
+      urlPathname: pathname,
+      urlSearchParams: search,
       label: pathname.split("/")[1],
     };
 
-    if (!search) {
+    if (!currentPageBreadcrumbItem.urlSearchParams) {
       setHistoricItems([currentPageBreadcrumbItem]);
     }
 
@@ -80,20 +69,20 @@ export const TableHistoricProvider = ({
     }
 
     setHistoricItems((prev) => {
-      if (prev.length === 0) {
-        return [currentPageBreadcrumbItem];
-      }
-
-      const currentPageBreadcrumbItemIndex = prev.findIndex(
-        (item) => item.href === currentUrl
+      const breadcrumbItemIndex = prev.findIndex(
+        (item) => item.urlPathname === currentPageBreadcrumbItem.urlPathname
       );
-      if (currentPageBreadcrumbItemIndex !== -1) {
-        return prev.slice(0, currentPageBreadcrumbItemIndex + 1);
+
+      if (breadcrumbItemIndex !== -1) {
+        return [
+          ...prev.slice(0, breadcrumbItemIndex),
+          currentPageBreadcrumbItem,
+        ];
       }
 
       return [...prev, currentPageBreadcrumbItem];
     });
-  }, [pathname]);
+  }, [pathname, search, searchParams]);
 
   function onNavigateToAnotherTable(path: string) {
     const stringifiedHistoricItems = JSON.stringify(historicItems);
@@ -105,12 +94,13 @@ export const TableHistoricProvider = ({
   }
 
   function onClickBreadcrumbItem(itemIndex: number) {
-    const currentUrl = `${pathname}${search}`;
     const clickedBreadcrumbItem = historicItems[itemIndex];
 
-    if (clickedBreadcrumbItem.href === currentUrl) return;
+    if (clickedBreadcrumbItem.urlPathname === pathname) return;
 
-    navigate(clickedBreadcrumbItem.href);
+    navigate(
+      `${clickedBreadcrumbItem.urlPathname}${clickedBreadcrumbItem.urlSearchParams}`
+    );
   }
 
   function onChangeFilters<
@@ -118,26 +108,14 @@ export const TableHistoricProvider = ({
       [key: string]: string;
     }
   >(newFilters: TFilters) {
-    const filtersAsSearchParams = new URLSearchParams(newFilters);
-    const currentPathUrl = `${pathname}?${filtersAsSearchParams}`;
-
-    if (historicItems.length === 0) {
-      return;
-    }
-
-    setHistoricItems((prev) => {
-      const { label } = prev.pop()!;
-
-      return [
-        ...prev,
-        {
-          href: currentPathUrl,
-          label,
-        },
-      ];
+    const filtersAsSearchParams = new URLSearchParams({
+      ...Object.fromEntries(searchParams),
+      ...CleanObjectEmptyValues(newFilters),
     });
 
-    setSearchParams(new URLSearchParams(newFilters));
+    navigate(`${pathname}?${filtersAsSearchParams}`, {
+      replace: true,
+    });
   }
 
   return (
@@ -146,8 +124,8 @@ export const TableHistoricProvider = ({
         breadcrumbItems: historicItems,
         onNavigateToAnotherTable,
         onClickBreadcrumbItem,
-        onChangeFilters,
-        initialFiltersFromUrl,
+        setFilters: onChangeFilters,
+        filters: Object.fromEntries(searchParams),
       }}
     >
       {children}
