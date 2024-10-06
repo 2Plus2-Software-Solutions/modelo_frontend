@@ -13,7 +13,7 @@ export type Payment = {
 export const columns: ColumnDef<Payment>[] = [
   {
     accessorKey: "actions",
-    header: "Ações",
+    header: "Ações 2",
     cell: ({ row }) => {
       return <UpdatePayment payment={row.original} />;
     },

@@ -27,7 +27,6 @@ export const columns: ColumnDef<User>[] = [
     cell: ({ row }) => (
       <NavigationCell
         to="/payments"
-        origin="users"
         identifier={row.original.id}
         targetFilterAccessorKey="userId"
       />
