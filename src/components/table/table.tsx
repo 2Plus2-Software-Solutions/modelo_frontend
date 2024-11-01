@@ -1,11 +1,9 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, PaginationState } from "@tanstack/react-table";
 import React from "react";
 
 import { DataTable } from "@/components/data-table/data-table";
-import { FakeFetch } from "@/lib/fake-fetch";
-
-import { Path, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "../ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,30 +23,16 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useTableHistoric } from "@/context/table-historic.context";
+import { FiltersDef } from "./types";
 
-interface BaseFiltersDef<TFilters> {
-  accessorKey: Path<TFilters>;
-  label: string;
-}
-
-interface InputFiltersDef<TFilters> extends BaseFiltersDef<TFilters> {
-  inputType: "input";
-  mask?: (value: string) => string;
-}
-
-interface SelectFiltersDef<TFilters> extends BaseFiltersDef<TFilters> {
-  inputType: "select";
-  selectOptions: { value: string; label: string }[];
-}
-
-export type FiltersDef<TFilters> =
-  | InputFiltersDef<TFilters>
-  | SelectFiltersDef<TFilters>;
-
-interface DataTableProps<TData, TFilters> {
+interface TableProps<TData, TFilters> {
+  title: string;
   columns: ColumnDef<TData>[];
   filters: FiltersDef<TFilters>[];
-  title: string;
+  fetchDataFn: (
+    pagination: PaginationState,
+    filters: TFilters
+  ) => Promise<TData[]>;
 }
 
 export function Table<
@@ -56,7 +40,12 @@ export function Table<
   TFilters extends {
     [key: string]: string;
   }
->({ columns, filters: filtersDef, title }: DataTableProps<TData, TFilters>) {
+>({
+  columns,
+  filters: filtersDef,
+  title,
+  fetchDataFn,
+}: TableProps<TData, TFilters>) {
   const { pagination } = useTablePagination();
   const { breadcrumbItems, onClickBreadcrumbItem, setFilters, filters } =
     useTableHistoric();
@@ -94,8 +83,7 @@ export function Table<
 
   const { data } = useQuery({
     queryKey: ["data", pagination, filters],
-    queryFn: () =>
-      FakeFetch<TData[], TFilters>(pagination, filters as TFilters),
+    queryFn: () => fetchDataFn(pagination, filters as TFilters),
     placeholderData: keepPreviousData,
     enabled: Object.keys(filters).length !== 0,
   });

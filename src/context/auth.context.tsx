@@ -3,7 +3,6 @@ import { GoogleCredentialResponse } from "@react-oauth/google";
 
 interface AuthContextType {
   user: any;
-  isUserLoggedIn: boolean;
   isVerifyingUserAuthentication: boolean;
   login: (response: GoogleCredentialResponse) => void;
   logout: () => void;
@@ -15,7 +14,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<any>(null);
-  const [isUserLoggedIn, setIsUserLoggedIn] = useState<boolean>(false);
   const [isVerifyingUserAuthentication, setIsVerifyingUserAuthentication] =
     useState(true);
 
@@ -27,7 +25,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         // Simulate backend validation (replace with actual backend call if needed)
         await new Promise((resolve) => setTimeout(resolve, 1000));
         setUser(JSON.parse(storedUser));
-        setIsUserLoggedIn(true);
       }
       setIsVerifyingUserAuthentication(false);
     };
@@ -37,7 +34,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = (response: GoogleCredentialResponse) => {
     console.log(response);
-    setIsUserLoggedIn(true);
     localStorage.setItem("user", "usuario");
     // Uncomment and adjust this section when ready to handle the login
     // const decodedToken: any = jwtDecode(response.credential);
@@ -53,7 +49,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const logout = () => {
     setUser(null);
-    setIsUserLoggedIn(false);
     localStorage.removeItem("user");
   };
 
@@ -61,7 +56,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     <AuthContext.Provider
       value={{
         user,
-        isUserLoggedIn,
         isVerifyingUserAuthentication,
         login,
         logout,
