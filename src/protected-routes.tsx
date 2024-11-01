@@ -2,6 +2,8 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "./context/auth.context";
 
 const ProtectedRoutes = () => {
+  return <Outlet />;
+  
   const { user, isVerifyingUserAuthentication } = useAuth();
 
   if (isVerifyingUserAuthentication) {

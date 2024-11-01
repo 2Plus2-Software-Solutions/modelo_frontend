@@ -1,4 +1,4 @@
-import { FiltersDef } from "@/components/table/table";
+import { FiltersDef } from "@/components/table/types";
 
 export type UserFilters = {
   name: string;

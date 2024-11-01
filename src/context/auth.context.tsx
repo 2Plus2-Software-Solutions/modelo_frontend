@@ -23,8 +23,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log(storedUser);
       if (storedUser) {
         // Simulate backend validation (replace with actual backend call if needed)
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setUser(JSON.parse(storedUser));
+        // await new Promise((resolve) => setTimeout(resolve, 1000));
+        // setUser(JSON.parse(storedUser));
       }
       setIsVerifyingUserAuthentication(false);
     };
