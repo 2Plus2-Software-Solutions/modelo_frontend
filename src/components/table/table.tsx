@@ -1,13 +1,12 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { ColumnDef, PaginationState } from "@tanstack/react-table";
-import React from "react";
+import { ColumnDef } from "@tanstack/react-table";
+import React, { useEffect } from "react";
 
 import { DataTable } from "@/components/data-table/data-table";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "../ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useTablePagination } from "@/context/table-pagination.context";
 import {
   Select,
   SelectContent,
@@ -24,15 +23,13 @@ import {
 } from "@/components/ui/breadcrumb";
 import { useTableHistoric } from "@/context/table-historic.context";
 import { FiltersDef } from "./types";
+import { queryClient } from "@/lib/queryClient";
 
 interface TableProps<TData, TFilters> {
   title: string;
   columns: ColumnDef<TData>[];
   filters: FiltersDef<TFilters>[];
-  fetchDataFn: (
-    pagination: PaginationState,
-    filters: TFilters
-  ) => Promise<TData[]>;
+  fetchDataFn: (filters: TFilters) => Promise<TData[]>;
 }
 
 export function Table<
@@ -46,7 +43,6 @@ export function Table<
   title,
   fetchDataFn,
 }: TableProps<TData, TFilters>) {
-  const { pagination } = useTablePagination();
   const { breadcrumbItems, onClickBreadcrumbItem, setFilters, filters } =
     useTableHistoric();
 
@@ -66,10 +62,6 @@ export function Table<
     },
   });
 
-  function searchResults(values: TFilters) {
-    setFilters(values);
-  }
-
   function resetFilters() {
     filtersForm.reset(memoizedDefaultFiltersObject);
   }
@@ -81,12 +73,33 @@ export function Table<
   );
   const defaultData = React.useMemo(() => [], []);
 
-  const { data } = useQuery({
-    queryKey: ["data", pagination, filters],
-    queryFn: () => fetchDataFn(pagination, filters as TFilters),
+  const { data, refetch } = useQuery({
+    queryKey: [`data-${title}`, filters],
+    queryFn: () => fetchDataFn(filters as TFilters),
     placeholderData: keepPreviousData,
     enabled: Object.keys(filters).length !== 0,
   });
+
+  function searchResults(values: TFilters) {
+    console.log(values);
+    setFilters({ ...values });
+
+    setTimeout(() => {
+      refetch();
+    }, 0);
+  }
+
+  useEffect(() => {
+    console.log(filters);
+  }, [filters]);
+
+  useEffect(() => {
+    return () => {
+      queryClient.removeQueries({
+        queryKey: [`data-${title}`],
+      });
+    };
+  }, [title]);
 
   return (
     <div className="container mx-auto py-10">
@@ -132,13 +145,17 @@ export function Table<
                     return (
                       <FormItem>
                         <FormLabel>{filter.label}</FormLabel>
-                        <Select onValueChange={field.onChange}>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder={filter.label} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
+                            {/* <SelectItem value="">Todos</SelectItem> */}
                             {filter.selectOptions.map((option) => {
                               return (
                                 <SelectItem

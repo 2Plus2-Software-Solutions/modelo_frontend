@@ -1,46 +1,15 @@
+import { PagesDefinitions } from "../pages-definitions";
 import { columns, User } from "./columns";
 import { filters, UserFilters } from "./filters";
 import { Table } from "@/components/table/table";
-import { PaginationState } from "@tanstack/react-table";
 import api from "@/services/api";
 
-const fetchUsersFn = async (
-  pagination: PaginationState,
-  filters: UserFilters
-): Promise<User[]> => {
-  // return [
-  //   {
-  //     id: "1",
-  //     name: "John Doe",
-  //     email: "john.doe@example.com",
-  //     age: 20,
-  //   },
-  //   {
-  //     id: "2",
-  //     name: "Jane Doe",
-  //     email: "jane.doe@example.com",
-  //     age: 25,
-  //   },
-  //   {
-  //     id: "3",
-  //     name: "Jim Doe",
-  //     email: "jim.doe@example.com",
-  //     age: 30,
-  //   },
-  //   {
-  //     id: "4",
-  //     name: "Jill Doe",
-  //     email: "jill.doe@example.com",
-  //     age: 35,
-  //   },
-  // ];
+const fetchUsersFn = async (filters: UserFilters): Promise<User[]> => {
+  console.log(filters);
 
-  console.log(pagination, filters);
-  const response = await api.get("/user", {
-    params: { ...pagination, ...filters },
+  const response = await api.get(PagesDefinitions.USERS_TABLE.apiPathname, {
+    params: { ...filters },
   });
-
-  console.log(response.data);
 
   return response.data;
 };
@@ -51,7 +20,7 @@ export default function UsersTable() {
       <Table
         columns={columns}
         filters={filters}
-        title="Usuários"
+        title={PagesDefinitions.USERS_TABLE.title}
         fetchDataFn={fetchUsersFn}
       />
     </div>

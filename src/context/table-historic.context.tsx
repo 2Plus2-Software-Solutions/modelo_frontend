@@ -2,6 +2,7 @@ import React, { ReactNode } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import LZString from "lz-string";
 import { CleanObjectEmptyValues } from "@/lib/clean-object-empty-values";
+import { PagesDefinitions } from "@/pages/pages-definitions";
 
 type TableHistoricItem = {
   urlPathname: string;
@@ -48,7 +49,10 @@ export const TableHistoricProvider = ({
     const currentPageBreadcrumbItem: TableHistoricItem = {
       urlPathname: pathname,
       urlSearchParams: search,
-      label: pathname.split("/")[1],
+      label:
+        Object.values(PagesDefinitions).find(
+          (page) => page.urlPathname === pathname.split("/")[1]
+        )?.title || "",
     };
 
     if (!currentPageBreadcrumbItem.urlSearchParams) {

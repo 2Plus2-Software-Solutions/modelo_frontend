@@ -1,43 +1,39 @@
 import { FiltersDef } from "@/components/table/types";
+import { CurrencyMask } from "@/lib/masks/currency-mask";
 
 export type PaymentFilters = {
-  username: string;
-  age: string;
-  email: string;
-  city: string;
-
+  amount: string;
+  status: string;
   userId: string;
 };
 
 export const filters: FiltersDef<PaymentFilters>[] = [
   {
-    accessorKey: "username",
-    label: "Username",
+    accessorKey: "amount",
+    label: "Valor",
     inputType: "input",
+    mask: CurrencyMask,
   },
   {
-    accessorKey: "age",
-    label: "Idade",
-    inputType: "input",
-    mask: (value) => value.replace(/\D/g, ""),
-  },
-  {
-    accessorKey: "email",
-    label: "E-mail",
-    inputType: "input",
-  },
-  {
-    accessorKey: "city",
-    label: "Cidade",
+    accessorKey: "status",
+    label: "Status",
     inputType: "select",
     selectOptions: [
       {
-        value: "1",
-        label: "Canoas",
+        value: "pending",
+        label: "Pendente",
       },
       {
-        value: "2",
-        label: "Porto Alegre",
+        value: "processing",
+        label: "Processando",
+      },
+      {
+        value: "completed",
+        label: "Sucesso",
+      },
+      {
+        value: "failed",
+        label: "Falha",
       },
     ],
   },

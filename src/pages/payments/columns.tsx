@@ -1,10 +1,11 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { UpdatePayment } from "./components/update";
+import { CurrencyFormatter } from "@/lib/formatters/currency-formatter";
 
 export type Payment = {
   id: string;
   amount: number;
-  status: "pending" | "processing" | "success" | "failed";
+  status: "pending" | "processing" | "completed" | "failed";
   email: string;
 
   userId: string;
@@ -25,25 +26,12 @@ export const columns: ColumnDef<Payment>[] = [
   {
     accessorKey: "email",
     header: "E-mail",
-    cell: ({ row }) => {
-      return (
-        <span className="cursor-pointer" onClick={() => alert("TESTE")}>
-          {row.getValue("email")}
-        </span>
-      );
-    },
   },
   {
     accessorKey: "amount",
-    header: () => <div className="text-right">Amount</div>,
+    header: "Valor",
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("amount"));
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
-
-      return <div className="text-right font-medium">{formatted}</div>;
+      return <span>{CurrencyFormatter(row.original.amount)}</span>;
     },
   },
 ];

@@ -3,6 +3,9 @@ import {
   getCoreRowModel,
   VisibilityState,
   useReactTable,
+  getPaginationRowModel,
+  getSortedRowModel,
+  SortingState,
 } from "@tanstack/react-table";
 
 import {
@@ -13,7 +16,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import React from "react";
-import { useTablePagination } from "@/context/table-pagination.context";
 import { Pagination } from "./components/pagination";
 import { Content } from "./components/content";
 
@@ -26,22 +28,21 @@ export function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
-  const { pagination, setPagination: onPaginationChange } =
-    useTablePagination();
-
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
+  const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
-    manualPagination: true,
-    onPaginationChange,
+    onSortingChange: setSorting,
     state: {
       columnVisibility,
-      pagination,
+      sorting,
     },
   });
 

@@ -8,6 +8,7 @@ import PaymentsTable from "@/pages/payments/payments.tsx";
 import { MainLayout } from "@/layouts/main.layout.tsx";
 import Login from "@/pages/login/login.tsx";
 import ProtectedRoutes from "./protected-routes.tsx";
+import { PagesDefinitions } from "./pages/pages-definitions.ts";
 // import ErrorPage from "@/pages/error/error.tsx"; // Assuming you have an error page component
 
 const router = createBrowserRouter([
@@ -34,11 +35,11 @@ const router = createBrowserRouter([
                 element: <p>Home</p>,
               },
               {
-                path: "users",
+                path: PagesDefinitions.USERS_TABLE.urlPathname,
                 element: <UsersTable />,
               },
               {
-                path: "payments",
+                path: PagesDefinitions.PAYMENTS_TABLE.urlPathname,
                 element: <PaymentsTable />,
               },
             ],

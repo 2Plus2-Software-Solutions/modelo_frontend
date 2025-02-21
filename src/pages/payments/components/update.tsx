@@ -21,8 +21,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { CurrencyMask } from "@/lib/masks/currency-mask";
+import api from "@/services/api";
 
 const editPaymentSchema = z.object({
+  id: z.string(),
   amount: z.string(),
   email: z.string().email(),
 });
@@ -35,13 +38,17 @@ export function UpdatePayment({ payment }: UpdatePaymentProps) {
   const form = useForm<z.infer<typeof editPaymentSchema>>({
     resolver: zodResolver(editPaymentSchema),
     defaultValues: {
-      amount: payment.amount.toString(),
+      amount: CurrencyMask(payment.amount?.toString()),
       email: payment.email,
     },
   });
 
-  function onSubmit(values: z.infer<typeof editPaymentSchema>) {
+  async function onSubmit(values: z.infer<typeof editPaymentSchema>) {
     console.log(values);
+
+    // const response = await api.put(`/payment/${values.id}`, {
+    //   values,
+    // });
   }
 
   return (
@@ -79,7 +86,13 @@ export function UpdatePayment({ payment }: UpdatePaymentProps) {
                 <FormItem>
                   <FormLabel>Valor</FormLabel>
                   <FormControl>
-                    <Input placeholder="Valor" {...field} />
+                    <Input
+                      placeholder="Valor"
+                      {...field}
+                      onChange={(event) =>
+                        field.onChange(CurrencyMask(event.target.value))
+                      }
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
