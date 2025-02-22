@@ -7,6 +7,7 @@ export type User = {
   id: string;
   name: string;
   email: string;
+  age: number;
   createdAt: Date;
 };
 
@@ -26,6 +27,10 @@ export const columns: ColumnDef<User>[] = [
     header: ({ column }) => {
       return <SortableHeader column={column} label="E-mail"></SortableHeader>;
     },
+  },
+  {
+    accessorKey: "age",
+    header: "Idade",
   },
   {
     accessorKey: "createdAt",

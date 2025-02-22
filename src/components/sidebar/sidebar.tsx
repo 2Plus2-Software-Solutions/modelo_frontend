@@ -17,6 +17,7 @@ export function Sidebar() {
           {/* h-[300px] */}
           <ScrollArea className="h-auto px-1">
             <div className="space-y-1 p-2">
+              {/* Tornar Dinamico */}
               <Button
                 variant={pathname.includes("/users") ? "secondary" : "ghost"}
                 className="w-full justify-start"

@@ -5,8 +5,6 @@ import { Table } from "@/components/table/table";
 import api from "@/services/api";
 
 const fetchUsersFn = async (filters: UserFilters): Promise<User[]> => {
-  console.log(filters);
-
   const response = await api.get(PagesDefinitions.USERS_TABLE.apiPathname, {
     params: { ...filters },
   });

@@ -22,7 +22,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CurrencyMask } from "@/lib/masks/currency-mask";
-import api from "@/services/api";
 
 const editPaymentSchema = z.object({
   id: z.string(),
